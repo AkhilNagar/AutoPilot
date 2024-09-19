@@ -4,7 +4,7 @@
     <selectionStates>
       <SelectionState runConfigName="app">
         <option name="selectionMode" value="DROPDOWN" />
-        <DropdownSelection timestamp="2024-09-18T17:24:48.814133400Z">
+        <DropdownSelection timestamp="2024-09-19T06:33:32.709855900Z">
           <Target type="DEFAULT_BOOT">
             <handle>
               <DeviceId pluginId="LocalEmulator" identifier="path=C:\Users\akhilnagar\.android\avd\Automotive_Distant_Display_with_Google_Play_API_33.avd" />

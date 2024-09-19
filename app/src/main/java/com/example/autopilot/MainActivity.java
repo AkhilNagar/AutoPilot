@@ -5,6 +5,7 @@ import android.app.Activity;
 import android.content.pm.PackageManager;
 import android.media.AudioFormat;
 import android.media.AudioRecord;
+import android.media.MediaPlayer;
 import android.media.MediaRecorder;
 import android.os.Bundle;
 import android.util.Log;
@@ -20,7 +21,10 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -134,7 +138,22 @@ public class MainActivity extends AppCompatActivity {
 
                 int responseCode = conn.getResponseCode();
                 if (responseCode == HttpURLConnection.HTTP_OK) {
-                    // Handle success
+                    Log.d("MyTag", "Response Code: " + responseCode);
+                    ByteArrayOutputStream responseStream = new ByteArrayOutputStream();
+                    try (InputStream inputStream = conn.getInputStream()) {
+                        byte[] buffer = new byte[1024];
+                        int bytesRead;
+                        while ((bytesRead = inputStream.read(buffer)) != -1) {
+                            responseStream.write(buffer, 0, bytesRead);
+                        }
+                    }
+
+                    // Get the audio data from the response
+                    byte[] responseAudioData = responseStream.toByteArray();
+
+                    // Play the audio
+                    playAudio(responseAudioData);
+
                 } else {
                     // Handle error
                 }
@@ -142,6 +161,39 @@ public class MainActivity extends AppCompatActivity {
                 e.printStackTrace();
             }
         }).start();
+    }
+
+    private void playAudio(byte[] audioData) {
+        MediaPlayer mediaPlayer = null;
+        try {
+            // Create a temporary file to hold the audio data
+            File tempFile = File.createTempFile("responseAudio", ".wav", getCacheDir());
+            try (FileOutputStream fos = new FileOutputStream(tempFile)) {
+                fos.write(audioData);
+            }
+
+            // Create MediaPlayer to play the audio
+            mediaPlayer = new MediaPlayer();
+            mediaPlayer.setDataSource(tempFile.getAbsolutePath());
+            mediaPlayer.setOnCompletionListener(mp -> {
+                mp.release(); // Release resources on completion
+                tempFile.delete(); // Delete the temp file after playback
+            });
+
+            mediaPlayer.setOnErrorListener((mp, what, extra) -> {
+                mp.release(); // Release on error
+                tempFile.delete(); // Clean up temp file
+                return true; // Indicate the error was handled
+            });
+
+            mediaPlayer.prepare();
+            mediaPlayer.start();
+        } catch (IOException e) {
+            e.printStackTrace();
+            if (mediaPlayer != null) {
+                mediaPlayer.release(); // Ensure mediaPlayer is released if an error occurs
+            }
+        }
     }
 
     private boolean checkPermissions() {
